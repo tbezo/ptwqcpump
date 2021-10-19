@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
+ptw_quickcheck 0.1.0
+Custom class for QCPump to upload PTW Quickcheck Data to QATrack+
 
-This is a temporary script file.
 """
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -47,10 +47,6 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
     ]
 
     
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.set_qatrack_unit_names_to_ids()
-     
     def validate_qc_file(self, values):
         filename = values['directory'] + "\\" + values['filename']
         self.log_info("QuickCheck filename: " + filename)
@@ -93,9 +89,9 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                 energy = td.find("Worklist/AdminData/AdminValues/Energy").text
                 modality = td.find("Worklist/AdminData/AdminValues/Modality").text
             if modality == 'Photons':
-                energy = energy + "x" #"MV Photon"
+                energy = energy + "x" # MV Photons
             if modality == 'Electrons':
-                energy = energy + "e" #"MeV Electrons"   
+                energy = energy + "e" # MeV Electrons
                 
             #construct dict with analyzed values
             values = {}
@@ -105,6 +101,7 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                 
             #unit_long_name = "Test: " + td.find("Worklist/AdminData/AdminValues/TreatmentUnit").text.split(' ')[0]
             record = {
+                # comment out .split(' ')[0] in the line below to use the full treatment unit name
                 'unit': td.find("Worklist/AdminData/AdminValues/TreatmentUnit").text.split(' ')[0],
                 'energy': energy,
                 'date': td.attrib['date'], # .split(' ')[0],
