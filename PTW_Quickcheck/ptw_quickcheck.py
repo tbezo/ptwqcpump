@@ -97,30 +97,30 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
         
         records = []
         for td in root.findall('./Content/TrendData'):
-            if td.attrib['date'].split(' ')[0] in dates:
+            if td.attrib['date'].split()[0] in dates:
                 # name used energy (photons or electrons)
                 energy = td.find("Worklist/AdminData/AdminValues/Energy").text
                 modality = td.find("Worklist/AdminData/AdminValues/Modality").text
-            if modality == 'Photons':
-                energy = energy + "x" # MV Photons
-            if modality == 'Electrons':
-                energy = energy + "e" # MeV Electrons
-                
-            # construct dict with analyzed values
-            values = {}
-            for mv in td.findall('MeasData/AnalyzeValues/'):
-                values["qc_" + mv.tag.lower() + "_" + energy] = {'value': float(mv.findtext('Value'))}
-                #self.log_info(values["qc_" + mv.tag.lower() + "_" + energy])
-                
-            record = {
-                # comment out .split(' ')[0] in the line below to use the full treatment unit name
-                'unit': td.find("Worklist/AdminData/AdminValues/TreatmentUnit").text.split(' ')[0],
-                'energy': energy,
-                'date': td.attrib['date'], # .split(' ')[0],
-                'values': values
-            }
-            records.append(record)
-            # self.log_info(record['unit'] + " " + record['date'])
+                if modality == 'Photons':
+                    energy = energy + "x" # MV Photons
+                if modality == 'Electrons':
+                    energy = energy + "e" # MeV Electrons
+                    
+                # construct dict with analyzed values
+                values = {}
+                for mv in td.findall('MeasData/AnalyzeValues/'):
+                    values["qc_" + mv.tag.lower() + "_" + energy] = {'value': float(mv.findtext('Value'))}
+                    #self.log_info(values["qc_" + mv.tag.lower() + "_" + energy])
+                    
+                record = {
+                    # comment out .split(' ')[0] in the line below to use the full treatment unit name
+                    'unit': td.find("Worklist/AdminData/AdminValues/TreatmentUnit").text.split(' ')[0],
+                    'energy': energy,
+                    'date': td.attrib['date'], # .split(' ')[0],
+                    'values': values
+                }
+                records.append(record)
+                # self.log_info(record['unit'] + " " + record['date'])
         return records
     
     def test_list_for_record(self, record):
