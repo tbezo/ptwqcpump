@@ -61,14 +61,23 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
         return valid, message    
     
     def fetch_records(self):
-        #self.log_info('available units: ' + str(self.qatrack_unit_names_to_ids))
+        """
+        Returns a list of records with the name of the treatment unit, energy, 
+        date and the analyzed values from the xml file as a dict. One can
+        choose how many days into the past the records are returned in the Pump
+        setting Days of history.
+
+        Returns
+        -------
+        records : LIST
+            List oft dicts containing the individual records
+
+        """
+        # self.log_info('available units: ' + str(self.qatrack_unit_names_to_ids))
         directory = self.get_config_value('PTW Quickcheck', 'directory')
         filename = self.get_config_value('PTW Quickcheck', 'filename')
         
         qcwfile = directory + "\\" + filename
-        
-        self.log_info('opening file ' + qcwfile)
-        root = ET.parse(qcwfile).getroot()
 
         # how many days including today should be imported (days of history)?
         # doh = 7
@@ -76,11 +85,15 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
         dates = []
         for i in range(doh):
             dates.append((datetime.date.today() -
-                          datetime.timedelta(days = i)).strftime('%Y-%m-%d'))
-
-        # for testing purpose
+                          datetime.timedelta(days = i)).strftime('%Y-%m-%d'))   
+        
+        # for testing purpose 
         # searchdate = "2021-09-01"
         # dates.append(searchdate)
+        
+        # open/parse file with xml.etree.ElementTree and get the root
+        # self.log_info('opening file ' + qcwfile)
+        root = ET.parse(qcwfile).getroot()
         
         records = []
         for td in root.findall('./Content/TrendData'):
@@ -93,13 +106,12 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
             if modality == 'Electrons':
                 energy = energy + "e" # MeV Electrons
                 
-            #construct dict with analyzed values
+            # construct dict with analyzed values
             values = {}
             for mv in td.findall('MeasData/AnalyzeValues/'):
                 values["qc_" + mv.tag.lower() + "_" + energy] = {'value': float(mv.findtext('Value'))}
                 #self.log_info(values["qc_" + mv.tag.lower() + "_" + energy])
                 
-            #unit_long_name = "Test: " + td.find("Worklist/AdminData/AdminValues/TreatmentUnit").text.split(' ')[0]
             record = {
                 # comment out .split(' ')[0] in the line below to use the full treatment unit name
                 'unit': td.find("Worklist/AdminData/AdminValues/TreatmentUnit").text.split(' ')[0],
@@ -108,7 +120,7 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                 'values': values
             }
             records.append(record)
-            #self.log_info(record['unit'] + " " + record['date'])
+            # self.log_info(record['unit'] + " " + record['date'])
         return records
     
     def test_list_for_record(self, record):
@@ -117,21 +129,35 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
 
     def qatrack_unit_for_record(self, record):
         """Accept a record to process and return a QATrack+ Unit name."""
-        #self.log_info('unit for record: ' + record['unit'])
+        # self.log_info('unit for record: ' + record['unit'])
         return record['unit']
 
     def id_for_record(self, record):
+        """
+        Create an ID for the payload to prevent multiple uploads of the same 
+        records.
+        """
         rec_id = record['unit'] + "_" + record['date'] + "_" + record['energy']
         return rec_id
 
     def work_datetimes_for_record(self, record):
+        """
+        Returns work started and work completed times from a record. The date
+        and time is taken from the Quick Check data (through fetch_records()) 
+        and converted to a datetime object.
+        """
         rdt = datetime.datetime.strptime(record['date'], '%Y-%m-%d %H:%M:%S')
         return rdt, rdt + datetime.timedelta(seconds=1)
 
     def test_values_from_record(self, record):
+        """
+        Returns the test values from a record for the API payload. Preparation
+        and formatting is done in fetch_records().
+        """
         return record['values']
     
     def pump(self):
+        """Pump added to have a place to execute set_qatrack_unit_names_to_ids()"""
         self._unit_cache = {}
         #self._record_meta_cache = {}
         self.set_qatrack_unit_names_to_ids()
@@ -140,9 +166,8 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
     def set_qatrack_unit_names_to_ids(self):
         """Fetch all available qatrack unit names.  We are overriding common.qatrack version
         of this because users are not selecting the unit names, instead we're getting
-        directly from directory name"""
+        directly from Quick Check measurement file"""
         self.qatrack_unit_names_to_ids = {}
-
         endpoint = self.construct_api_url("units/units")
         for unit in self.get_qatrack_choices(endpoint):
             self.qatrack_unit_names_to_ids[unit['name']] = unit['number']    
