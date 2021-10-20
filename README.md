@@ -1,5 +1,5 @@
 # ptwqcpump
-A PTW Quickcheck Pump for QATrack+ QCPump. PTW QC Pump is able to parse Quickcheck measurement files (\*.qcw) and extract the measurement values. The measured values are uploaded via the QATrack+ API as one testlist per energy.
+A PTW Quickcheck Pump for (QATrack+ QCPump)[https://github.com/qatrackplus/qcpump]. PTW QC Pump is able to parse Quickcheck measurement files (\*.qcw) and extract the measurement values. The measured values are uploaded via the QATrack+ API as one testlist per energy.
 
 The main function is fetch_records() which returns a list of individual records. The individual records looks like this (Reported are the \<AnalyzeValues\> in percent):
 
