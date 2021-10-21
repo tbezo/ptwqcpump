@@ -8,7 +8,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import datetime
 
-from qcpump.pumps.base import BasePump, STRING, DIRECTORY, UINT
+from qcpump.pumps.base import BasePump, STRING, DIRECTORY, UINT, BOOLEAN
 from qcpump.pumps.common.qatrack import QATrackFetchAndPost #, slugify
 
 class QuickcheckPump(QATrackFetchAndPost, BasePump):
@@ -40,6 +40,13 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                     'required': False,
                     'help': "enter the number of days to immport",
                     'default': 1,
+                },
+                                {
+                    'name': 'Add norm to comment',
+                    'type': BOOLEAN,
+                    'required': False,
+                    'help': "Set to True to add normalization values to test list comment",
+                    'default': False,
                 },
             ],
         },
@@ -105,7 +112,15 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                     energy = energy + "x" # MV Photons
                 if modality == 'Electrons':
                     energy = energy + "e" # MeV Electrons
-                    
+                
+                # add comment if configured
+                comment = ''
+                if self.get_config_value('PTW Quickcheck', 'Add norm to comment'):
+                    comment = 'Norm values: '
+                    for nv in td.findall('Worklist/AdminData/AnalyzeParams/'):
+                        comment += nv.tag + ": " + nv.findtext('Norm') + ", "
+                    #self.log_info(comments)
+                
                 # construct dict with analyzed values
                 values = {}
                 for mv in td.findall('MeasData/AnalyzeValues/'):
@@ -119,6 +134,8 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                     'date': td.attrib['date'], # .split(' ')[0],
                     'values': values
                 }
+                if comment:
+                    record['comment'] = comment
                 records.append(record)
                 # self.log_info(record['unit'] + " " + record['date'])
         return records
@@ -155,6 +172,15 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
         and formatting is done in fetch_records().
         """
         return record['values']
+    
+    def comment_for_record(self, record):
+        """
+        Returns comment from record.
+        """
+        if 'comment' in record:
+            return record['comment']
+        else:
+            return ""
     
     def pump(self):
         """Pump added to have a place to execute set_qatrack_unit_names_to_ids()"""
