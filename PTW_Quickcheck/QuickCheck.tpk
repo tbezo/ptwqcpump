@@ -17,7 +17,7 @@
 		"version": "3.1.0",
 		"datetime": "2021-11-10 08:18:43.659178+00:00",
 		"description": "Upload Tests for PTWQCPump",
-		"contact": "Thomas Bezold (Thomas.Bezold@unimedizin-mainz.de)",
+		"contact": "tbezo @ github",
 		"name": "QuickCheck",
 		"id": "e41b6513-1a37-4640-a75e-5f54c8058a82"
 	}
