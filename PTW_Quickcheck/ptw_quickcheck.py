@@ -175,7 +175,7 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
     
     def comment_for_record(self, record):
         """
-        Returns comment from record.
+        Returns comment from record if existent.
         """
         if 'comment' in record:
             return record['comment']
