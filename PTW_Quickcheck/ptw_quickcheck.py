@@ -4,14 +4,20 @@ ptw_quickcheck 0.1.0
 Custom class for QCPump to upload PTW Quickcheck Data to QATrack+
 
 """
-from pathlib import Path
+
+from os.path import exists
+# from pathlib import Path # had some trouble with this
 import xml.etree.ElementTree as ET
 import datetime
 
 from qcpump.pumps.base import BasePump, STRING, DIRECTORY, UINT, BOOLEAN
-from qcpump.pumps.common.qatrack import QATrackFetchAndPost #, slugify
+from qcpump.pumps.common.qatrack import QATrackFetchAndPost # , slugify
 
 class QuickcheckPump(QATrackFetchAndPost, BasePump):
+
+    def __init__(self, *args, **kwargs):
+        self.unit_list = []
+        super().__init__(*args, **kwargs)
 
     DISPLAY_NAME = "PTW Quickcheck"
 
@@ -48,6 +54,13 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                     'help': "Set to True to add normalization values to test list comment",
                     'default': False,
                 },
+                {
+                    'name': 'units filter',
+                    'type': STRING,
+                    'required': False,
+                    'help': "Comma separated, case sensitive list of units to record.",
+                    'default': "",
+                },
             ],
         },
         QATrackFetchAndPost.QATRACK_API_CONFIG,
@@ -58,12 +71,20 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
         filename = values['directory'] + "\\" + values['filename']
         self.log_info("QuickCheck filename: " + filename)
         
-        if Path(filename).is_file():
+        #if filename.is_file(): #had some trouble with this
+        if exists(filename):
             valid = True
-            message = "file exists"
+            message = "File exists."
         else:
             valid = False
-            message = "file does not exist!"
+            message = "File does not exist!"
+        
+        if values['units filter']:
+            self.unit_list = [x.strip() for x in values['units filter'].split(',')]
+            # build message from list to document the correct splitting
+            message = message + " " + "Using units "  + ', '.join(self.unit_list)
+        else:
+            message = message + " Using all availabe units." 
         
         return valid, message    
     
@@ -136,7 +157,8 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                 }
                 if comment:
                     record['comment'] = comment
-                records.append(record)
+                if record['unit'] in self.unit_list or '' in self.unit_list:
+                    records.append(record)
                 # self.log_info(record['unit'] + " " + record['date'])
         return records
     
@@ -196,4 +218,4 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
         self.qatrack_unit_names_to_ids = {}
         endpoint = self.construct_api_url("units/units")
         for unit in self.get_qatrack_choices(endpoint):
-            self.qatrack_unit_names_to_ids[unit['name']] = unit['number']    
+            self.qatrack_unit_names_to_ids[unit['name']] = unit['number']
