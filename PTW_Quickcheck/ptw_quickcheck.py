@@ -157,9 +157,8 @@ class QuickcheckPump(QATrackFetchAndPost, BasePump):
                 }
                 if comment:
                     record['comment'] = comment
-                if record['unit'] in self.unit_list or '' in self.unit_list:
+                if record['unit'] in self.unit_list or not self.unit_list:
                     records.append(record)
-                # self.log_info(record['unit'] + " " + record['date'])
         return records
     
     def test_list_for_record(self, record):
